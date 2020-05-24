@@ -26,6 +26,11 @@ after runing your code. there will be a stack.log generated.
 ### convert stack.log to html
 
 - install timeline2html
+
+```
+go get -u github.com/google/slowjam/cmd/timeline2html
+```
+
 - run timeline2html
 
 ```
