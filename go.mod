@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/slowjam v0.0.0-20200423205752-d32c9a66cc0c
 	github.com/maruel/panicparse v1.4.1
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/profile v1.4.0
