@@ -1,4 +1,4 @@
-module github.com/google/slowjam
+module github.com/medyagh/slowjam
 
 go 1.13
 
