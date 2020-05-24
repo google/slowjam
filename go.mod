@@ -6,7 +6,7 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/maruel/panicparse v1.4.1
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
-	github.com/pkg/profile v1.4.0 // indirect
+	github.com/pkg/profile v1.4.0
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 )

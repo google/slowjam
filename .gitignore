@@ -13,3 +13,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# geneated files durinb compile/build
+timeline2html/slowjam_full.html
+timeline2html/slowjam_simple.html
+timeline2html/timeline2html
