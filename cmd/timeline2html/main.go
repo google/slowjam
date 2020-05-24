@@ -51,8 +51,8 @@ func main() {
 
 	tl := stackparse.CreateTimeline(samples, stackparse.SuggestedIgnore)
 	tls := stackparse.SimplifyTimeline(tl)
-	GenerateHTML(tl, "full.html")
-	GenerateHTML(tls, "simple.html")
+	GenerateHTML(tl, "slowjam_full.html")
+	GenerateHTML(tls, "slowjam_simple.html")
 
 }
 

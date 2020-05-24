@@ -60,7 +60,7 @@ var reportTemplate = template.Must(template.New("SlowJamReportTemplate").Funcs(f
   </script>
 </head>
 <body>
-  <h1>SlowJam for {{ .Duration}} ({{ .TL.Samples }} samples) - <a href="/slowjam_full.html">full</a> | <a href="/slowjam_simple.html">simple</a></h1>
+  <h1>SlowJam for {{ .Duration}} ({{ .TL.Samples }} samples) - <a href="slowjam_full.html">full</a> | <a href="slowjam_simple.html">simple</a></h1>
   <div id="timeline" style="width: 3200px; height: 1024px;"></div>
 </body>
 </html>`))
