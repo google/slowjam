@@ -1,6 +1,6 @@
 # slowjam
 
-![logo](docs/logo.png)
+![logo](docs/slowjam.png)
 
 `NOTE: This is not an officially supported Google product`
 
