@@ -1,5 +1,7 @@
 # slowjam
 
+![logo](docs/logo.png)
+
 `NOTE: This is not an officially supported Google product`
 
 SlowJam is a tool for analyzing the performance of Go applications which consume substantial wall-clock time, but do not consume substantial CPU time. For example, an automation tool which primarily waits on command-line execution or remote resources to become available.
@@ -15,7 +17,7 @@ Go has great profiling and tracing support for applications which consume many r
 
 # Screenshot
 
-![screenshot](screenshot.png)
+![screenshot](docs/screenshot.png)
 
 See `example/minikube.html` for example output.
 
@@ -27,14 +29,15 @@ See `example/minikube.html` for example output.
 
 ## Recording
 
-Embed this snippet into a program, preferably guarded by a flag:
+Embed this snippet into a program, preferably guarded by a flag or environment variable:
 
 ```go
 s, err := stacklog.Start(stacklog.Config{})
 defer s.Stop()
 ```
 
-By default, this will poll the stack every 125ms, recording it to `stack.log`
+By default, this will poll the stack every 125ms, and save the stack log to to `stack.log`.
+
 
 ## Visualization
 
