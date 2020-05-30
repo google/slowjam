@@ -14,38 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+// Package text is for rendering a timeline into text form
+package text
 
 import (
 	"fmt"
-	"github.com/google/slowjam/pkg/stackparse"
-	"os"
 	"strings"
+
+	"github.com/google/slowjam/pkg/stackparse"
 )
 
-func main() {
-	f, err := os.Open(os.Args[1])
-	if err != nil {
-		panic(fmt.Sprintf("open: %v", err))
-	}
-	defer f.Close()
-	samples, err := stackparse.Read(f)
-	if err != nil {
-		panic(fmt.Sprintf("parse: %v", err))
-	}
+// Tree outputs a human-readable tree of goroutines found.
+func Tree(tl *stackparse.Timeline) string {
+	var sb strings.Builder
 
-	tl := stackparse.CreateTimeline(samples, stackparse.SuggestedIgnore)
+	sb.WriteString(fmt.Sprintf("%d samples over %s\n", tl.Samples, tl.End.Sub(tl.Start)))
 
-	fmt.Printf("%d samples over %s\n", tl.Samples, tl.End.Sub(tl.Start))
 	for _, g := range tl.Goroutines {
-		fmt.Printf("goroutine %d (%s)\n", g.ID, g.Signature.CreatedByString(true))
+		sb.WriteString(fmt.Sprintf("goroutine %d (%s)\n", g.ID, g.Signature.CreatedByString(true)))
+
 		for i, l := range g.Layers {
 			for _, c := range l.Calls {
 				if c.Samples > 1 {
-					fmt.Printf(" %s %s execution time: %s (%d samples)\n", strings.Repeat(" ", i), c.Name, c.EndDelta-c.StartDelta, c.Samples)
+					sb.WriteString(fmt.Sprintf(" %s %s execution time: %s (%d samples)\n", strings.Repeat(" ", i), c.Name, c.EndDelta-c.StartDelta, c.Samples))
 				}
 			}
 		}
-		fmt.Printf("\n")
+
+		sb.WriteString("\n")
 	}
+
+	return sb.String()
 }

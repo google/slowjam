@@ -1,4 +1,4 @@
-![logo](docs/slowjam.png)
+# ![logo](docs/slowjam.png)
 
 `NOTE: This is not an officially supported Google product`
 
@@ -6,41 +6,63 @@ SlowJam is a tool for analyzing the performance of Go applications which consume
 
 Go has great profiling and tracing support for applications which consume many resources, but does not have a low-touch story for profiling applications that primarily wait on external resources.
 
-# Features
+## Features
 
 * Stack-based sampling approach
 * Minimal instrumentation (2 lines of code to integrate)
 * Minimal & tunable overhead (~1% for the small workloads we have tested)
 * Hybrid Gantt/Flamegraph visualization
 
-# Screenshot
+## Screenshot
 
 ![screenshot](docs/screenshot.png)
 
 See `example/minikube.html` for example output.
 
-# Requirements
+## Requirements
 
 * Go v1.14 or higher
 
-# Usage
+## Usage
 
 ## Recording
 
-Embed this snippet into a program, preferably guarded by a flag or environment variable:
+SlowJam contains a package named `stacklog`, which includes the minimal code required to record data for analysis. The simplest way to get started is invoking this in the `main()` method of your binary. This tells the stack logger to run in a default configuration if STACKLOG_PATH is set in the environment, and will record data to that location.
 
 ```go
-s, err := stacklog.Start(stacklog.Config{})
+s := stacklog.MustStartFromEnv("STACKLOG_PATH")
 defer s.Stop()
 ```
 
-By default, this will poll the stack every 125ms, and save the stack log to to `stack.log`.
+If you prefer greater control over the configuration, you can also use:
 
+```go
+s, err := stacklog.Start(stacklog.Config{Path: os.Getenv("STACKLOG_PATH")})
+defer s.Stop()
+```
+
+By default, this will poll the stack every 125ms.
 
 ## Visualization
 
+Install slowjam:
+
+`go install github.com/google/slowjam/cmd/slowjam`
+
+Analyze a stacklog using the interactive webserver:
+
 ```shell
-go run cmd/timeline/timeline.go </path/to/stack.log>
+slowjam -http localhost:8080 /path/to/stack.slog
 ```
 
-This will start a webserver on port 8000 with a visualization.
+To output HTML:
+
+```shell
+slowjam -html out.html /path/to/stack.slog
+```
+
+## Real World Example
+
+SlowJam was built to make [minikube](http://minikube.sigs.k8s.io/) go faster. Here's how we did it:
+
+(TBD)

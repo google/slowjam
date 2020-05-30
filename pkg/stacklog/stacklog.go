@@ -14,76 +14,152 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package stacklog logs the Go stack to disk in a loop for later analysis
 package stacklog
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 )
 
-// Config defines how to configure a stack logger
+var (
+	// DefaultPoll is how often to poll stack status by default
+	defaultPoll = 125 * time.Millisecond
+
+	// DefaultQuiet can be set to disable stderr messages by default
+	defaultQuiet = false
+)
+
+// Config defines how to configure a stack logger.
 type Config struct {
-	Path string
-	Poll time.Duration
+	Path  string
+	Poll  time.Duration
+	Quiet bool
 }
 
-// Start begins logging stacks to an output file
-func Start(c Config) (*StackLog, error) {
+// Start begins logging stacks to an output file.
+func Start(c Config) (*Stacklog, error) {
 	if c.Poll == 0 {
-		c.Poll = 125 * time.Millisecond
+		c.Poll = defaultPoll
 	}
+
 	if c.Path == "" {
-		c.Path = "stack.log"
+		tf, err := ioutil.TempFile("", "*.slog")
+		if err != nil {
+			return nil, fmt.Errorf("default path: %w", err)
+		}
+
+		c.Path = tf.Name()
 	}
-	os.Stderr.WriteString(fmt.Sprintf("Logging stacks to %s, sampling every %s\n", c.Path, c.Poll))
-	s := &StackLog{
+
+	if !c.Quiet {
+		fmt.Fprintf(os.Stderr, "stacklog: logging to %s, sampling every %s\n", c.Path, c.Poll)
+	}
+
+	s := &Stacklog{
 		ticker: time.NewTicker(c.Poll),
 		path:   c.Path,
+		quiet:  c.Quiet,
 	}
+
 	f, err := os.Create(c.Path)
 	if err != nil {
 		return s, err
 	}
+
 	s.f = f
 	go s.loop()
+
 	return s, nil
 }
 
-// StackLog controls the stack logger
-type StackLog struct {
+// MustStartFromEnv logs stacks to an output file based on the environment.
+func MustStartFromEnv(key string) *Stacklog {
+	val := os.Getenv(key)
+	if val == "" {
+		return nil
+	}
+
+	s, err := Start(Config{Path: val, Quiet: defaultQuiet, Poll: defaultPoll})
+	if err != nil {
+		panic(fmt.Sprintf("stacklog from environment %q: %v", key, err))
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		s.Stop()
+	}()
+
+	return s
+}
+
+// Stacklog controls the stack logger.
+type Stacklog struct {
 	ticker  *time.Ticker
-	f       io.WriteCloser
+	f       *os.File
+	quiet   bool
 	path    string
 	samples int
 }
 
-// loop starts a background
-func (s *StackLog) loop() {
+// loop periodically records the stack log to disk.
+func (s *Stacklog) loop() {
 	for range s.ticker.C {
-		s.f.Write([]byte(fmt.Sprintf("%d\n", time.Now().UnixNano())))
-		s.f.Write(DumpStacks())
-		s.f.Write([]byte("-\n"))
+		if _, err := s.f.Write([]byte(fmt.Sprintf("%d\n", time.Now().UnixNano()))); err != nil {
+			if !s.quiet {
+				fmt.Fprintf(os.Stderr, "stacklog: write failed: %v", err)
+			}
+		}
+
+		if _, err := s.f.Write(DumpStacks()); err != nil {
+			if !s.quiet {
+				fmt.Fprintf(os.Stderr, "stacklog: write failed: %v", err)
+			}
+		}
+
+		if _, err := s.f.Write([]byte("-\n")); err != nil {
+			if !s.quiet {
+				fmt.Fprintf(os.Stderr, "stacklog: write failed: %v", err)
+			}
+		}
+
+		if err := s.f.Sync(); err != nil {
+			if !s.quiet {
+				fmt.Fprintf(os.Stderr, "stacklog: sync failed: %v", err)
+			}
+		}
+
 		s.samples++
 	}
 }
 
-// DumpStacks returns a formatted stack trace of goroutines, using a large enough buffer to capture the entire trace
+// DumpStacks returns a formatted stack trace of goroutines, using a large enough buffer to capture the entire trace.
 func DumpStacks() []byte {
 	buf := make([]byte, 1024)
+
 	for {
 		n := runtime.Stack(buf, true)
 		if n < len(buf) {
 			return buf[:n]
 		}
+
 		buf = make([]byte, 2*len(buf))
 	}
 }
 
-// Stop stops logging stacks
-func (s *StackLog) Stop() {
+// Stop stops logging stacks to disk.
+func (s *Stacklog) Stop() {
 	s.ticker.Stop()
-	os.Stderr.WriteString(fmt.Sprintf("stacklog: disabled. stored %d samples to %s\n", s.samples, s.path))
+
+	if !s.quiet {
+		fmt.Fprintf(os.Stderr, "stacklog: stopped. stored %d samples to %s\n", s.samples, s.path)
+	}
 }
