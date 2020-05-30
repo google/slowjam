@@ -82,7 +82,7 @@ func Start(c Config) (*Stacklog, error) {
 func MustStartFromEnv(key string) *Stacklog {
 	val := os.Getenv(key)
 	if val == "" {
-		return nil
+		return &Stacklog{}
 	}
 
 	s, err := Start(Config{Path: val, Quiet: defaultQuiet, Poll: defaultPoll})
@@ -157,6 +157,10 @@ func DumpStacks() []byte {
 
 // Stop stops logging stacks to disk.
 func (s *Stacklog) Stop() {
+	if s == nil || s.f == nil {
+		return
+	}
+
 	s.ticker.Stop()
 
 	if !s.quiet {
