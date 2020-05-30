@@ -20,7 +20,7 @@ SlowJam excels at finding optimization opportunities in automation workflows, as
 
 ![screenshot](docs/screenshot.png)
 
-See `example/minikube.html` for example output.
+See [example/minikube.html](example/minikube.html) for example output.
 
 ## Requirements
 
@@ -79,7 +79,7 @@ slowjam -html out.txt /path/to/stack.slog
 
 ## Real World Example
 
-Here's an example PR to integrate SlowJam analysis into minikube: [https://github.com/kubernetes/minikube/pull/8329](minikube#8329). What we were able to discover with SlowJam were:
+Here's an example PR to integrate SlowJam analysis into minikube: [minikube#8329](https://github.com/kubernetes/minikube/pull/8329). What we were able to discover with SlowJam were:
 
 * Functions which could obviously be run in parallel were executed in serial.
 * Functions which we expected to be fast (<1s) were slow (10s). In many cases we were able to remove or rewrite these functions to do less work.
