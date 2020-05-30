@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/google/slowjam/pkg/pprof"
 	"github.com/google/slowjam/pkg/stacklog"
 	"github.com/google/slowjam/pkg/stackparse"
 	"github.com/google/slowjam/pkg/text"
@@ -31,7 +32,8 @@ import (
 
 var (
 	httpEndpoint = flag.String("http", "", "HTTP endpoint to listen at")
-	htmlPath     = flag.String("html", "", "HTML path to output to")
+	htmlPath     = flag.String("html", "", "Path to output HTML content to")
+	pprofPath    = flag.String("pprof", "", "Path to output pprof content to")
 	dumpText     = flag.Bool("text", false, "Outputs text rendering of goroutines found")
 )
 
@@ -74,11 +76,29 @@ func main() {
 		if err != nil {
 			glog.Exitf("open failed: %v", err)
 		}
+		defer w.Close()
 
 		if err := web.Render(w, tl); err != nil {
 			glog.Fatalf("render: %v", err)
 		}
 
+		return
+	}
+
+	if *pprofPath != "" {
+		w, err := os.Create(*pprofPath)
+		if err != nil {
+			glog.Exitf("open failed: %v", err)
+		}
+		defer w.Close()
+
+		bs, err := pprof.Render(tl)
+		if err != nil {
+			glog.Fatalf("render: %v", err)
+		}
+		if _, err := w.Write(bs); err != nil {
+			glog.Fatalf("write: %v", err)
+		}
 		return
 	}
 
