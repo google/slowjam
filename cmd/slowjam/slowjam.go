@@ -32,7 +32,7 @@ import (
 var (
 	httpEndpoint = flag.String("http", "", "HTTP endpoint to listen at")
 	htmlPath     = flag.String("html", "", "HTML path to output to")
-	tree         = flag.Bool("tree", false, "Outputs a text rendering of goroutine graph")
+	dumpText     = flag.Bool("text", false, "Outputs text rendering of goroutines found")
 )
 
 func main() {
@@ -41,12 +41,12 @@ func main() {
 
 	flag.Parse()
 
-	if len(os.Args) != 2 {
+	if len(flag.Args()) != 1 {
 		fmt.Fprintln(os.Stderr, "usage: slowjam [flags] <path>")
 		os.Exit(64) // EX_USAGE
 	}
 
-	f, err := os.Open(os.Args[1])
+	f, err := os.Open(flag.Args()[0])
 	if err != nil {
 		glog.Fatalf("open: %v", err)
 	}
@@ -82,7 +82,7 @@ func main() {
 		return
 	}
 
-	if *tree {
+	if *dumpText {
 		fmt.Print(text.Tree(tl))
 		return
 	}

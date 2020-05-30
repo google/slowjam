@@ -19,6 +19,7 @@ package text
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/google/slowjam/pkg/stackparse"
@@ -30,8 +31,17 @@ func Tree(tl *stackparse.Timeline) string {
 
 	sb.WriteString(fmt.Sprintf("%d samples over %s\n", tl.Samples, tl.End.Sub(tl.Start)))
 
-	for _, g := range tl.Goroutines {
-		sb.WriteString(fmt.Sprintf("goroutine %d (%s)\n", g.ID, g.Signature.CreatedByString(true)))
+	gor := []int{}
+
+	for k := range tl.Goroutines {
+		gor = append(gor, k)
+	}
+
+	sort.Ints(gor)
+
+	for _, gid := range gor {
+		g := tl.Goroutines[gid]
+		sb.WriteString(fmt.Sprintf("goroutine %d (%s)\n", gid, g.Signature.CreatedByString(true)))
 
 		for i, l := range g.Layers {
 			for _, c := range l.Calls {
