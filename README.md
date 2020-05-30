@@ -2,16 +2,19 @@
 
 `NOTE: This is not an officially supported Google product`
 
-SlowJam is a tool for analyzing the performance of Go applications which consume substantial wall-clock time, but do not consume substantial CPU time. For example, an automation tool which primarily waits on command-line execution or remote resources to become available.
+SlowJam is a two-part tool for analyzing function latency within Go programs.
 
-Go has great profiling and tracing support for applications which consume many resources, but does not have a low-touch story for profiling applications that primarily wait on external resources.
+* `stacklog` - a library for sampling the stack of a Go program during runtime
+* `slowjam` - a binary for visualizing the latency from recorded stack samples
+
+SlowJam excels at finding optimization opportunities in automation workflows, as they tend to block on command-line execution or remote resources, rather than CPU resources. This tool was created from a hackathon hosted by Google's Container DevEx  team, with the goal of finding ways to reduce the start-up latency within [minikube](http://minikube.sigs.k8s.io/).
 
 ## Features
 
-* Stack-based sampling approach
-* Minimal instrumentation (2 lines of code to integrate)
-* Minimal & tunable overhead (~1% for the small workloads we have tested)
-* Hybrid Gantt/Flamegraph visualization
+* Hybrid Gantt/Flamegraph visualizations
+* Automated sampling of all function calls
+* Trivial to integrate
+* Zero overhead when inactive, <1% overhead when activated
 
 ## Screenshot
 
@@ -25,19 +28,26 @@ See `example/minikube.html` for example output.
 
 ## Usage
 
-## Recording
+### Recording
 
-SlowJam contains a package named `stacklog`, which includes the minimal code required to record data for analysis. The simplest way to get started is invoking this in the `main()` method of your binary. This tells the stack logger to run in a default configuration if STACKLOG_PATH is set in the environment, and will record data to that location.
+Add this to the `main()` method of your program, or within any other function you wish to record stack samples for:
+
 
 ```go
 s := stacklog.MustStartFromEnv("STACKLOG_PATH")
 defer s.Stop()
 ```
 
-If you prefer greater control over the configuration, you can also use:
+This will invoke the stack sampler if the `STACKLOG_PATH` environment is set, and will write the stack samples to that location. If you prefer greater control over the configuration, you can also use:
 
 ```go
-s, err := stacklog.Start(stacklog.Config{Path: os.Getenv("STACKLOG_PATH")})
+cfg := stacklog.Config{
+  Path: "out.slog",
+  Poll: 100 * time.Millisecond,
+	Quiet: true
+}
+  
+s, err := stacklog.Start(cfg)
 defer s.Stop()
 ```
 
@@ -55,19 +65,23 @@ Analyze a stacklog using the interactive webserver:
 slowjam -http localhost:8080 /path/to/stack.slog
 ```
 
-To output HTML:
+To output a Gantt/Flamegraph chart to `out.html`:
 
 ```shell
 slowjam -html out.html /path/to/stack.slog
 ```
 
+To output a text summary to `out.txt`:
+
+```shell
+slowjam -html out.txt /path/to/stack.slog
+```
+
 ## Real World Example
 
-SlowJam was built to make [minikube](http://minikube.sigs.k8s.io/) go faster. Here's an example PR to integrate SlowJam analysis into minikube: https://github.com/kubernetes/minikube/pull/8329
+Here's an example PR to integrate SlowJam analysis into minikube: [https://github.com/kubernetes/minikube/pull/8329](minikube#8329). What we were able to discover with SlowJam were:
 
-What we were able to discover with SlowJam were:
+* Functions which could obviously be run in parallel were executed in serial.
+* Functions which we expected to be fast (<1s) were slow (10s). In many cases we were able to remove or rewrite these functions to do less work.
 
-* Things which we expected to be fast (<1s) were slow (10s)
-* Things which could obviously be run in parallel were not
-
-In all, we were able to speed minikube start up by about 3X by using SlowJam to analyze what it was waiting on.
+The net result was a 2.5X reduction in start-up latency: from ~66 seconds to ~26 seconds.
