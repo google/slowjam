@@ -63,6 +63,11 @@ slowjam -html out.html /path/to/stack.slog
 
 ## Real World Example
 
-SlowJam was built to make [minikube](http://minikube.sigs.k8s.io/) go faster. Here's how we did it:
+SlowJam was built to make [minikube](http://minikube.sigs.k8s.io/) go faster. Here's an example PR to integrate SlowJam analysis into minikube: https://github.com/kubernetes/minikube/pull/8329
 
-(TBD)
+What we were able to discover with SlowJam were:
+
+* Things which we expected to be fast (<1s) were slow (10s)
+* Things which could obviously be run in parallel were not
+
+In all, we were able to speed minikube start up by about 3X by using SlowJam to analyze what it was waiting on.
