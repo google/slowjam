@@ -70,7 +70,7 @@ func main() {
 	}
 
 	if *htmlPath != "" {
-		w, err := os.Open(*htmlPath)
+		w, err := os.Create(*htmlPath)
 		if err != nil {
 			glog.Exitf("open failed: %v", err)
 		}
