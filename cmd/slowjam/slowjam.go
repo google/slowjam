@@ -92,7 +92,7 @@ func main() {
 		}
 		defer w.Close()
 
-		bs, err := pprof.Render(tl)
+		bs, err := pprof.Render(samples, stackparse.SuggestedIgnore)
 		if err != nil {
 			glog.Fatalf("render: %v", err)
 		}

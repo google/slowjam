@@ -163,7 +163,7 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string) *Timeline {
 			}
 
 			for depth, c := range g.Signature.Stack.Calls {
-				if internalCall(c) {
+				if InternalCall(c) {
 					continue
 				}
 
@@ -236,7 +236,7 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string) *Timeline {
 	return tl
 }
 
-func internalCall(c stack.Call) bool {
+func InternalCall(c stack.Call) bool {
 	if c.Func.PkgName() == "syscall" {
 		return true
 	}
