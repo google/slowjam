@@ -39,7 +39,7 @@ func ix(m map[string]int64, key string) int64 {
 }
 
 // Render outputs a pprof protobuf somewhere.
-func Render(samples []*stackparse.StackSample, ignoreCreators []string) ([]byte, error) {
+func Render(samples []*stackparse.StackSample, ignoreCreators []string, goroutines []int) ([]byte, error) {
 	st := map[string]int64{"": 0}
 
 	p := &Profile{
@@ -50,7 +50,7 @@ func Render(samples []*stackparse.StackSample, ignoreCreators []string) ([]byte,
 		TimeNanos: time.Now().UnixNano(),
 	}
 
-	pss, loc, fx := processSamples(samples, st, ignoreCreators)
+	pss, loc, fx := processSamples(samples, st, ignoreCreators, goroutines)
 	p.Sample = pss
 	p.Location = loc
 	p.Function = fx
@@ -63,11 +63,15 @@ func Render(samples []*stackparse.StackSample, ignoreCreators []string) ([]byte,
 	return proto.Marshal(p)
 }
 
-func processSamples(samples []*stackparse.StackSample, st map[string]int64, ignoreCreators []string) ([]*Sample, []*Location, []*Function) {
+func processSamples(samples []*stackparse.StackSample, st map[string]int64, ignoreCreators []string, goroutines []int) ([]*Sample, []*Location, []*Function) {
 	ig := map[string]bool{}
-
 	for _, i := range ignoreCreators {
 		ig[i] = true
+	}
+
+	gorm := map[int]bool{}
+	for _, i := range goroutines {
+		gorm[i] = true
 	}
 
 	pss := []*Sample{}
@@ -82,6 +86,10 @@ func processSamples(samples []*stackparse.StackSample, st map[string]int64, igno
 
 		for _, g := range s.Context.Goroutines {
 			if ig[g.CreatedBy.Func.PkgDotName()] {
+				continue
+			}
+
+			if len(gorm) > 0 && !gorm[g.ID] {
 				continue
 			}
 

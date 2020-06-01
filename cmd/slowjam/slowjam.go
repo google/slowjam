@@ -17,11 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/golang/glog"
+	"github.com/spf13/pflag"
 
 	"github.com/google/slowjam/pkg/pprof"
 	"github.com/google/slowjam/pkg/stacklog"
@@ -31,24 +31,25 @@ import (
 )
 
 var (
-	httpEndpoint = flag.String("http", "", "HTTP endpoint to listen at")
-	htmlPath     = flag.String("html", "", "Path to output HTML content to")
-	pprofPath    = flag.String("pprof", "", "Path to output pprof content to")
-	dumpText     = flag.Bool("text", false, "Outputs text rendering of goroutines found")
+	httpEndpoint = pflag.String("http", "", "HTTP endpoint to listen at")
+	htmlPath     = pflag.String("html", "", "Path to output HTML content to")
+	pprofPath    = pflag.String("pprof", "", "Path to output pprof content to (consider using --goroutines=1)")
+	goroutines   = pflag.IntSlice("goroutines", []int{}, "goroutines to include (default: all)")
+	dumpText     = pflag.Bool("text", false, "Outputs text rendering of goroutines found")
 )
 
 func main() {
 	s := stacklog.MustStartFromEnv("STACKLOG_PATH")
 	defer s.Stop()
 
-	flag.Parse()
+	pflag.Parse()
 
-	if len(flag.Args()) != 1 {
+	if len(pflag.Args()) != 1 {
 		fmt.Fprintln(os.Stderr, "usage: slowjam [flags] <path>")
 		os.Exit(64) // EX_USAGE
 	}
 
-	f, err := os.Open(flag.Args()[0])
+	f, err := os.Open(pflag.Args()[0])
 	if err != nil {
 		glog.Fatalf("open: %v", err)
 	}
@@ -64,7 +65,7 @@ func main() {
 		glog.Fatalf("parse: %v", err)
 	}
 
-	tl := stackparse.CreateTimeline(samples, stackparse.SuggestedIgnore)
+	tl := stackparse.CreateTimeline(samples, stackparse.SuggestedIgnore, *goroutines)
 
 	if *httpEndpoint != "" {
 		web.Serve(*httpEndpoint, tl)
@@ -92,13 +93,15 @@ func main() {
 		}
 		defer w.Close()
 
-		bs, err := pprof.Render(samples, stackparse.SuggestedIgnore)
+		bs, err := pprof.Render(samples, stackparse.SuggestedIgnore, *goroutines)
 		if err != nil {
 			glog.Fatalf("render: %v", err)
 		}
+
 		if _, err := w.Write(bs); err != nil {
 			glog.Fatalf("write: %v", err)
 		}
+
 		return
 	}
 

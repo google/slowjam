@@ -133,11 +133,15 @@ func SimplifyTimeline(tl *Timeline) *Timeline {
 }
 
 // CreateTimeline creates a timeline from stack samples.
-func CreateTimeline(samples []*StackSample, ignoreCreators []string) *Timeline {
+func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines []int) *Timeline {
 	ig := map[string]bool{}
-
 	for _, i := range ignoreCreators {
 		ig[i] = true
+	}
+
+	gorm := map[int]bool{}
+	for _, i := range goroutines {
+		gorm[i] = true
 	}
 
 	tl := &Timeline{
@@ -151,6 +155,10 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string) *Timeline {
 
 		for _, g := range s.Context.Goroutines {
 			if ig[g.CreatedBy.Func.PkgDotName()] {
+				continue
+			}
+
+			if len(gorm) > 0 && !gorm[g.ID] {
 				continue
 			}
 
