@@ -131,12 +131,6 @@ func (s *Stacklog) loop() {
 			}
 		}
 
-		if err := s.f.Sync(); err != nil {
-			if !s.quiet {
-				fmt.Fprintf(os.Stderr, "stacklog: sync failed: %v", err)
-			}
-		}
-
 		s.samples++
 	}
 }
