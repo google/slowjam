@@ -79,7 +79,18 @@ slowjam -html out.txt /path/to/stack.slog
 
 ## Real World Example
 
-Here's an example PR to integrate SlowJam analysis into minikube: [minikube#8329](https://github.com/kubernetes/minikube/pull/8329). What we were able to discover with SlowJam were:
+Here's an example PR to integrate SlowJam analysis into minikube: [minikube#8329](https://github.com/kubernetes/minikube/pull/8329). 
+
+With this PR, anyone can generate a slowjam profile:
+
+`env STACKLOG_PATH=minikube.slog minikube start`
+
+You can then convert the data to various forms, as per the examples/ directory:
+
+`slowjam --goroutines 1 --pprof example/minikube.pprof example/minikube.slog`
+`slowjam --html example/minikube.html example/minikube.slog`
+
+What minikube contributors discovered with these results were:
 
 * Functions which could obviously be run in parallel were executed in serial.
 * Functions which we expected to be fast (<1s) were slow (10s). In many cases we were able to remove or rewrite these functions to do less work.
