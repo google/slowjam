@@ -57,7 +57,7 @@ By default, this will poll the stack every 125ms.
 
 Install slowjam:
 
-`go install github.com/google/slowjam/cmd/slowjam`
+`go get -u github.com/google/slowjam/cmd/slowjam`
 
 Analyze a stacklog using the interactive webserver:
 
