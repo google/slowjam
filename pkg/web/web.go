@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"image/color"
 	"io"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -35,38 +36,66 @@ var ganttTemplate = `
   <head>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
-      google.charts.load('current', {'packages':['timeline']});
-
+      google.charts.load('current', {'packages': ['timeline', 'controls']});
       google.charts.setOnLoadCallback(drawTimeline);
-      function drawTimeline() {
-        var container = document.getElementById('timeline');
-        var chart = new google.visualization.Timeline(container);
+
+      function dataTable() {
         var dataTable = new google.visualization.DataTable();
+
         dataTable.addColumn({ type: 'string', id: 'Layer' });
         dataTable.addColumn({ type: 'string', id: 'Function' });
         dataTable.addColumn({ type: 'string', id: 'style', role: 'style' });
         dataTable.addColumn({ type: 'date', id: 'Start' });
         dataTable.addColumn({ type: 'date', id: 'End' });
-  
+
         dataTable.addRows([
-          {{ range $g := .TL.Goroutines }}
+          {{ range $g := .TL.Goroutines | Sorted }}
             {{ range $index, $layer := .Layers}}
               {{ range $layer.Calls }}
-                [ '{{ $g.ID }}: {{ $g.Signature | Creator }}', '{{ .Name }}', '{{ Color .Package $index }}',  new Date({{ .StartDelta | Milliseconds }}), new Date({{ .EndDelta | Milliseconds }}) ],
+                [ '{{ $g.ID }}: {{ $g.Signature | Creator }}', '{{ .Name }}', '{{ Color .Package $index }}', new Date({{ .StartDelta | Milliseconds }}), new Date({{ .EndDelta | Milliseconds }}) ],
               {{ end }}
             {{ end }}
           {{ end }}
         ]);
+        return dataTable;
+      }
+
+      function drawTimeline() {
+        var container = document.getElementById('dashboard');
+        var dashboard = new google.visualization.Dashboard(container);
+        var picker = new google.visualization.ControlWrapper({
+            controlType: 'CategoryFilter',
+            containerId: 'picker',
+            options: {
+              filterColumnIndex: 0,
+              ui: {
+                selectedValuesLayout: 'below',
+                label: "Goroutines to display:",
+                sortValues: false,
+              },
+            },
+          }
+        );
+
+        var timeline = new google.visualization.ChartWrapper({
+          chartType: 'Timeline',
+          containerId: 'timeline',
+        });
+
+        dashboard.bind(picker, timeline);
         var options = {
           avoidOverlappingGridLines: false,
         };
-        chart.draw(dataTable, options);
+        dashboard.draw(dataTable(), options);
       }
     </script>
   </head>
   <body>
-    <h1>SlowJam for {{ .Duration}} ({{ .TL.Samples }} samples) - <a href="/">full</a> | <a href="/simple">simple</a></h1>
-    <div id="timeline" style="width: 3200px; height: 1024px;"></div>
+    <h1>SlowJam for {{ .Duration}} ({{ .TL.Samples }} samples, {{ len .TL.Goroutines }} goroutines) - <a href="/">full</a> | <a href="/simple">simple</a></h1>
+    <div id="dashboard">
+      <div id="picker"></div>
+      <div id="timeline" style="width: 3200px; height: 1024px;"></div>
+    </div>
   </body>
 </html>
 `
@@ -80,6 +109,7 @@ func Render(w io.Writer, tl *stackparse.Timeline) error {
 		"Creator":      creator,
 		"Height":       height,
 		"Color":        callColor,
+		"Sorted":       sorted,
 	}
 
 	t, err := template.New("timeline").Funcs(fmap).Parse(ganttTemplate)
@@ -105,6 +135,21 @@ func Render(w io.Writer, tl *stackparse.Timeline) error {
 
 func milliseconds(d time.Duration) string {
 	return fmt.Sprintf("%d", d.Milliseconds())
+}
+
+func sorted(grs map[int]*stackparse.GoroutineTimeline) []*stackparse.GoroutineTimeline {
+	rt := []*stackparse.GoroutineTimeline{}
+	ids := []int{}
+	for id := range grs {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids)
+	for _, id := range ids {
+		if gr := grs[id]; gr != nil {
+			rt = append(rt, gr)
+		}
+	}
+	return rt
 }
 
 func creator(s *stack.Signature) string {
