@@ -57,7 +57,7 @@ By default, this will poll the stack every 125ms.
 
 Install slowjam:
 
-`go install github.com/google/slowjam/cmd/slowjam`
+`go get github.com/google/slowjam/cmd/slowjam`
 
 Analyze a stacklog using the interactive webserver:
 
@@ -77,7 +77,9 @@ To output a text summary to `out.txt`:
 slowjam -html out.txt /path/to/stack.slog
 ```
 
-## Real World Example
+## Real World Examples
+
+1. Integrating SlowJam with Go binary.
 
 Here's an example PR to integrate SlowJam analysis into minikube: [minikube#8329](https://github.com/kubernetes/minikube/pull/8329). 
 
@@ -96,3 +98,12 @@ What minikube contributors discovered with these results were:
 * Functions which we expected to be fast (<1s) were slow (10s). In many cases we were able to remove or rewrite these functions to do less work.
 
 The net result was a 2.5X reduction in start-up latency: from ~66 seconds to ~26 seconds.
+
+2. Analyzing an integrated Go binary in kubernetes cluster. 
+Here's an pod config to analyze a Go binary running on a kuberenets cluster: [Pod SlowJam Profile](https://github.com/GoogleContainerTools/kaniko/blob/master/examples/pod-build-profile.yaml)
+
+In this Pod Config, 
+1. Set the environment variable `STACKLOG_PATH` to  to generate slowjam profile.
+2. Copy the generated stack samples to a accessible location in [Container Lifecyle hooks](https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/#define-poststart-and-prestop-handlers) `pre-stop`.
+
+
