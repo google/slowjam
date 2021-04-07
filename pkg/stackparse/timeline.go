@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/maruel/panicparse/stack"
+	"k8s.io/klog/v2"
 )
 
 // SuggestedIgnore are goroutines that we recommend ignoring.
@@ -29,8 +29,8 @@ var SuggestedIgnore = []string{
 	"signal.init.0",
 	"trace.Start",
 	"stacklog.Start",
-	"glog.init.0",
-	"glog.init.0",
+	"klog.init.0",
+	"klog.init.0",
 	"localbinary.(*Plugin).AttachStream",
 	"rpc.(*DefaultRPCClientDriverFactory).NewRPCClientDriver",
 	"http.(*http2Transport).newClientConn",
@@ -80,7 +80,7 @@ func SimplifyTimeline(tl *Timeline) *Timeline {
 			for _, c := range l.Calls {
 				// If it's less than .25%, omit
 				if c.Samples*250 < tl.Samples {
-					glog.Infof("%d: dropping %s due to sample size (%d, duration %s)\n", gid, c.Name, c.Samples, c.EndDelta-c.StartDelta)
+					klog.V(1).Infof("%d: dropping %s due to sample size (%d, duration %s)\n", gid, c.Name, c.Samples, c.EndDelta-c.StartDelta)
 					continue
 				}
 
@@ -90,7 +90,7 @@ func SimplifyTimeline(tl *Timeline) *Timeline {
 
 					for _, oc := range above.Calls {
 						if oc.StartDelta == c.StartDelta && oc.EndDelta == c.EndDelta && c.Package == oc.Package {
-							glog.Infof("%d: dropping due to overlap: %s\n", gid, c.Name)
+							klog.V(1).Infof("%d: dropping due to overlap: %s\n", gid, c.Name)
 
 							drop = true
 
@@ -107,7 +107,7 @@ func SimplifyTimeline(tl *Timeline) *Timeline {
 			}
 
 			if len(newCalls) < 1 {
-				glog.Infof("%d: dropping layer with %d calls due to lack of interesting calls\n", gid, len(l.Calls))
+				klog.V(1).Infof("%d: dropping layer with %d calls due to lack of interesting calls\n", gid, len(l.Calls))
 				continue
 			}
 
@@ -115,14 +115,14 @@ func SimplifyTimeline(tl *Timeline) *Timeline {
 		}
 
 		if len(newLayers) < 1 {
-			glog.Infof("%d: dropping goroutine due to lack of layers\n", g.ID)
+			klog.V(1).Infof("%d: dropping goroutine due to lack of layers\n", g.ID)
 			continue
 		}
 
 		newGoroutines[gid] = &GoroutineTimeline{g.ID, g.Signature, newLayers}
 	}
 
-	glog.Infof("simplified from %d to %d goroutines\n", len(tl.Goroutines), len(newGoroutines))
+	klog.V(1).Infof("Simplify was able to reduce visible goroutines from %d to %d\n", len(tl.Goroutines), len(newGoroutines))
 
 	return &Timeline{
 		Start:      tl.Start,
@@ -185,13 +185,10 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 				}
 
 				level := len(g.Signature.Stack.Calls) - depth - 1
-				// glog.Infof("level=%d, depth=%d call=%+v\n", level, depth, thisCall)
 				// New layer!
 				missing := level - (len(tl.Goroutines[g.ID].Layers) - 1)
 
-				// glog.Infof("%d has %d layers: missing=%d\n", g.ID, len(tl.Goroutines[g.ID].Layers), missing)
 				if missing > 0 {
-					//	glog.Infof("missing %d levels\n", missing)
 					for i := 0; i < missing; i++ {
 						tl.Goroutines[g.ID].Layers = append(tl.Goroutines[g.ID].Layers, &Layer{Calls: []*Call{}})
 					}
@@ -204,7 +201,6 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 				// Existing layer
 				calls := tl.Goroutines[g.ID].Layers[level].Calls
 				if len(calls) == 0 {
-					// 		glog.Infof("new call on level %d: %s\n", level, thisCall.Name)
 					tl.Goroutines[g.ID].Layers[level].Calls = []*Call{thisCall}
 
 					continue

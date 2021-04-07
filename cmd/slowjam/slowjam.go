@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
+	"k8s.io/klog/v2"
 
 	"github.com/google/slowjam/pkg/pprof"
 	"github.com/google/slowjam/pkg/stacklog"
@@ -39,10 +39,11 @@ var (
 )
 
 func main() {
+	klog.InitFlags(nil)
+	pflag.Parse()
+
 	s := stacklog.MustStartFromEnv("STACKLOG_PATH")
 	defer s.Stop()
-
-	pflag.Parse()
 
 	if len(pflag.Args()) != 1 {
 		fmt.Fprintln(os.Stderr, "usage: slowjam [flags] <path>")
@@ -51,18 +52,18 @@ func main() {
 
 	f, err := os.Open(pflag.Args()[0])
 	if err != nil {
-		glog.Fatalf("open: %v", err)
+		klog.Fatalf("open: %v", err)
 	}
 
 	defer func() {
 		if err := f.Close(); err != nil {
-			glog.Errorf("close failed: %v", err)
+			klog.Errorf("close failed: %v", err)
 		}
 	}()
 
 	samples, err := stackparse.Read(f)
 	if err != nil {
-		glog.Fatalf("parse: %v", err)
+		klog.Fatalf("parse: %v", err)
 	}
 
 	tl := stackparse.CreateTimeline(samples, stackparse.SuggestedIgnore, *goroutines)
@@ -75,12 +76,12 @@ func main() {
 	if *htmlPath != "" {
 		w, err := os.Create(*htmlPath)
 		if err != nil {
-			glog.Exitf("open failed: %v", err)
+			klog.Exitf("open failed: %v", err)
 		}
 		defer w.Close()
 
 		if err := web.Render(w, tl); err != nil {
-			glog.Fatalf("render: %v", err)
+			klog.Fatalf("render: %v", err)
 		}
 
 		return
@@ -89,17 +90,17 @@ func main() {
 	if *pprofPath != "" {
 		w, err := os.Create(*pprofPath)
 		if err != nil {
-			glog.Exitf("open failed: %v", err)
+			klog.Exitf("open failed: %v", err)
 		}
 		defer w.Close()
 
 		bs, err := pprof.Render(samples, stackparse.SuggestedIgnore, *goroutines)
 		if err != nil {
-			glog.Fatalf("render: %v", err)
+			klog.Fatalf("render: %v", err)
 		}
 
 		if _, err := w.Write(bs); err != nil {
-			glog.Fatalf("write: %v", err)
+			klog.Fatalf("write: %v", err)
 		}
 
 		return
@@ -110,5 +111,5 @@ func main() {
 		return
 	}
 
-	glog.Exitf("no output mode specified")
+	klog.Exitf("no output mode specified")
 }
