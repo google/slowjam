@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/slowjam/pkg/stackparse"
 	"google.golang.org/protobuf/proto"
+	"k8s.io/klog/v2"
 )
 
 // ix returns the index of a label.
@@ -118,7 +118,7 @@ func processSamples(samples []*stackparse.StackSample, st map[string]int64, igno
 		}
 
 		if len(locs) == 0 {
-			glog.Errorf("invalid sample, skipping")
+			klog.Errorf("invalid sample, skipping")
 			continue
 		}
 

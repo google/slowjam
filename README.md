@@ -62,19 +62,19 @@ Install slowjam:
 Analyze a stacklog using the interactive webserver:
 
 ```shell
-slowjam -http localhost:8080 /path/to/stack.slog
+slowjam --http localhost:8080 /path/to/stack.slog
 ```
 
 To output a Gantt/Flamegraph chart to `out.html`:
 
 ```shell
-slowjam -html out.html /path/to/stack.slog
+slowjam --html out.html /path/to/stack.slog
 ```
 
 To output a text summary to `out.txt`:
 
 ```shell
-slowjam -html out.txt /path/to/stack.slog
+slowjam --html out.txt /path/to/stack.slog
 ```
 
 ## Real World Examples
