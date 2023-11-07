@@ -20,19 +20,20 @@ package stackparse
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/maruel/panicparse/stack"
+	"github.com/maruel/panicparse/v2/stack"
 )
 
 // StackSample represents a single Go stack at a point in time.
 type StackSample struct {
 	Time    time.Time
-	Context *stack.Context
+	Context *stack.Snapshot
 }
 
 // Read parses a stack log input.
@@ -62,8 +63,8 @@ func Read(r io.Reader) ([]*StackSample, error) {
 		if strings.HasPrefix(scanner.Text(), "-") {
 			inStack = false
 
-			ctx, err := stack.ParseDump(sd, os.Stdout, false)
-			if err != nil {
+			ctx, _, err := stack.ScanSnapshot(sd, os.Stdout, &stack.Opts{})
+			if err != nil && err != io.EOF {
 				return samples, err
 			}
 
@@ -81,4 +82,8 @@ func Read(r io.Reader) ([]*StackSample, error) {
 	}
 
 	return samples, nil
+}
+
+func PkgDotName(f stack.Func) string {
+	return fmt.Sprintf("%s.%s", f.DirName, f.Name)
 }
