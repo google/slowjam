@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maruel/panicparse/stack"
+	"github.com/maruel/panicparse/v2/stack"
 	"k8s.io/klog/v2"
 )
 
@@ -154,7 +154,7 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 		tl.Samples++
 
 		for _, g := range s.Context.Goroutines {
-			if ig[g.CreatedBy.Func.PkgDotName()] {
+			if len(g.CreatedBy.Calls) != 0 && ig[PkgDotName(g.CreatedBy.Calls[0].Func)] {
 				continue
 			}
 
@@ -177,8 +177,8 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 
 				thisCall := &Call{
 					StartDelta: s.Time.Sub(tl.Start),
-					Name:       c.Func.PkgDotName(),
-					Package:    c.Func.PkgName(),
+					Name:       PkgDotName(c.Func),
+					Package:    c.Func.DirName,
 					Args:       c.Args,
 					lastSeen:   s.Time,
 					Samples:    1,
@@ -208,7 +208,7 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 
 				lc := calls[len(calls)-1]
 				// Existing call with the same name or short sample size
-				if lc.Name == c.Func.PkgDotName() && lc.EndDelta == 0 && (lc.Samples < 3 || SameArgs(lc.Args, c.Args)) {
+				if lc.Name == PkgDotName(c.Func) && lc.EndDelta == 0 && (lc.Samples < 3 || SameArgs(lc.Args, c.Args)) {
 					lc.Samples++
 					lc.lastSeen = s.Time
 
@@ -241,15 +241,15 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 }
 
 func InternalCall(c stack.Call) bool {
-	if c.Func.PkgName() == "syscall" {
+	if c.Func.DirName == "syscall" {
 		return true
 	}
 
-	if c.Func.IsExported() {
+	if c.Func.IsExported {
 		return false
 	}
 
-	if c.IsStdlib || strings.Contains(c.SrcPath, "/go/src/") {
+	if strings.Contains(c.RemoteSrcPath, "/go/src/") {
 		return true
 	}
 

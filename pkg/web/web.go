@@ -28,7 +28,7 @@ import (
 
 	"github.com/google/slowjam/pkg/stackparse"
 	"github.com/google/slowjam/third_party/colornames"
-	"github.com/maruel/panicparse/stack"
+	"github.com/maruel/panicparse/v2/stack"
 )
 
 var ganttTemplate = `
@@ -153,12 +153,10 @@ func sorted(grs map[int]*stackparse.GoroutineTimeline) []*stackparse.GoroutineTi
 }
 
 func creator(s *stack.Signature) string {
-	c := s.CreatedBy.Func.PkgDotName()
-	if c == "" {
-		c = "main"
+	if len(s.CreatedBy.Calls) == 0 {
+		return "main"
 	}
-
-	return c
+	return stackparse.PkgDotName(s.CreatedBy.Calls[0].Func)
 }
 
 func height(ls []*stackparse.Layer) string {
