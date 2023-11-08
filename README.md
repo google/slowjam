@@ -101,7 +101,7 @@ The net result was a 2.5X reduction in start-up latency: from ~66 seconds to ~26
 
 2. Analyzing an integrated Go binary in Kubernetes cluster.
 
-Here's an pod config to analyze a Go binary running on a Kuberenetes cluster: [Pod SlowJam Profile](https://github.com/GoogleContainerTools/kaniko/blob/master/examples/pod-build-profile.yaml)
+Here's an pod config to analyze a Go binary running on a Kubernetes cluster: [Pod SlowJam Profile](https://github.com/GoogleContainerTools/kaniko/blob/master/examples/pod-build-profile.yaml)
 
 In this Pod Config, 
 1. Set the environment variable `STACKLOG_PATH` to  to generate slowjam profile.
