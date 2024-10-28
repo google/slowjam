@@ -51,7 +51,7 @@ s, err := stacklog.Start(cfg)
 defer s.Stop()
 ```
 
-By default, this will poll the stack every 125ms.
+By default, this will poll the stack every 100ms.
 
 ## Visualization
 
