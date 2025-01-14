@@ -240,6 +240,7 @@ func CreateTimeline(samples []*StackSample, ignoreCreators []string, goroutines 
 	return tl
 }
 
+// InternalCall returns true if the call is internal to the Go runtime.
 func InternalCall(c stack.Call) bool {
 	if c.Func.DirName == "syscall" {
 		return true

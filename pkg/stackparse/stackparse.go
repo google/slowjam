@@ -84,6 +84,7 @@ func Read(r io.Reader) ([]*StackSample, error) {
 	return samples, nil
 }
 
+// PkgDotName returns a package-qualified function name.
 func PkgDotName(f stack.Func) string {
 	return fmt.Sprintf("%s.%s", f.DirName, f.Name)
 }
