@@ -24,7 +24,7 @@ See [example/minikube.html](example/minikube.html) for example output.
 
 ## Requirements
 
-* Go v1.14 or higher
+* Go v1.21 or higher
 
 ## Usage
 
