@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/maruel/panicparse/v2 v2.5.0
 	github.com/spf13/pflag v1.0.10
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.10
 	k8s.io/klog/v2 v2.130.1
 )
 
